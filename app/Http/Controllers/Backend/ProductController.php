@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Http\Requests\ProductRequest;
 use Illuminate\Http\Request;
 use App\Models\Backend\Product;
 use Illuminate\Routing\Controller;
+
+use App\Models\Backend\Brand;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -15,7 +19,8 @@ class ProductController extends Controller
      */
     public function index()
     {
-        //
+        $products = Product::all();
+        return response()->json($products);
     }
 
     /**
@@ -24,9 +29,18 @@ class ProductController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(ProductRequest $request)
     {
-        //
+        // Product::create($request->all());
+        $product = new Product();
+        $product->fill($request->validated());
+        if ($request->hasFile('image')) {
+            $image_name = $request->file('image')->getClientOriginalName();
+            $path = $request->file('image')->storeAs('public/products', $image_name);
+            $product->image = Storage::url($path);
+        }
+        $product->save();
+        return response()->json('create successfully', 201);
     }
 
     /**
@@ -37,7 +51,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        //
+        return response()->json($product);
     }
 
     /**
@@ -49,7 +63,24 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        //
+        // return response()->json($request);
+        $data_update = [
+            'name' => $request->name,
+            'price' => $request->price,
+            'quantity' => $request->quantity,
+            'category_id' => $request->category_id,
+            'brand_id' => $request->brand_id,
+            'description' => $request->description,
+        ];
+        if ($request->hasFile('image')) {
+            $image_name = $request->file('image')->getClientOriginalName();
+            $path = $request->file('image')->storeAs('public/products', $image_name);
+            $data_update['image'] = Storage::url($path);
+        }
+
+        $product->update($data_update);
+
+        return response()->json('update successfully', 201);
     }
 
     /**
@@ -60,6 +91,7 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        //
+        $product->delete();
+        return response()->json('successfully', 201);
     }
 }
